@@ -38,8 +38,8 @@ enum {
 
 int phone_book_insert(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name, char *contact_number);
 int phone_book_delete(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name);
-int phone_book_update(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name, char *contact_number);
-int phone_book_sort(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type);
+int phone_book_update(char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name, char *contact_number);
+int phone_book_sort(char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type);
 int print_phone_books(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type);
 int get_phone_book_info(char *input, char *type, char *name, char *contact_number);
 char *get_word(char *buf, char *word);
@@ -94,10 +94,10 @@ int main() {
                 phone_book_delete(phone_books, name_list, contact_num_list, type, name);
                 break;
             case 'u':
-                phone_book_update(phone_books, name_list, contact_num_list, type, name, contact_number);
+                phone_book_update(name_list, contact_num_list, type, name, contact_number);
                 break;
             case 's':
-                phone_book_sort(phone_books, name_list, contact_num_list, type);
+                phone_book_sort(name_list, contact_num_list, type);
                 break;
             default:
                 fprintf(stderr, "unknown command\n");
@@ -154,7 +154,7 @@ int phone_book_delete(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (
     return 0;
 }
 
-int phone_book_update(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER],char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name, char *contact_number){
+int phone_book_update(char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER],char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name, char *contact_number){
     int phone_book_id;
     if(!strcmp(type, "school")){
         phone_book_id = find_id_by_name(name_list, name, type);
@@ -173,7 +173,7 @@ int phone_book_update(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (
 }
 
 int print_phone_books(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type){
-    int i, j;
+    int i;
     printf("Type\tContact Name\tContact Number\n");
     if(!strcmp(type, "school")){
         for(i=0;i<MAX_CONTACT;i++){
@@ -267,7 +267,7 @@ int get_phone_book_type(char *input, char *type){
     return 0;
 }
 
-int phone_book_sort(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER],char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type){
+int phone_book_sort(char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER],char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type){
     int i, j;
     char tmp[MAX_PHONE_NUMBER];
     if(!strcmp(type, "school")){
