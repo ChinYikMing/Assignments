@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include <ctype.h>
 
 enum {
@@ -18,8 +17,6 @@ enum {
 #define MAX_PHONE_NUMBER 32
 
 #define BUF_SIZE 1024
-
-#define PHONE_BOOK_TYPE_LEN 8
 
 /*
  * like hw8:
@@ -39,35 +36,51 @@ enum {
 #define ERR_UNKNOWN_TYPE -2
 #define ERR_CONTACT_NOT_FOUND -3
 
-int phone_book_insert(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char **name_list, char *type, char *name, char *contact_number);
-int phone_book_delete(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char **name_list, char *name);
-int phone_book_update(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char **name_list, char *type, char *name, char *contact_number);
-int phone_book_sort(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type);
-int print_phone_books(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char *phone_book_type);
+int phone_book_insert(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name, char *contact_number);
+int phone_book_delete(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name);
+int phone_book_update(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name, char *contact_number);
+int phone_book_sort(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type);
+int print_phone_books(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type);
 int get_phone_book_info(char *input, char *type, char *name, char *contact_number);
 char *get_word(char *buf, char *word);
-int find_id_by_name(char **name_list, char *name);
-int get_phone_book_type(char *input, char *phone_book_type);
+int find_id_by_name(char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *name, char *type);
+int get_phone_book_type(char *input, char *type);
 
 
 int main() {
     char phone_books[PHONE_BOOKS_LEN][MAX_CONTACT][MAX_PHONE_NUMBER];
+    char name_list[PHONE_BOOKS_LEN][MAX_CONTACT][MAX_PHONE_NUMBER];
+    char contact_num_list[PHONE_BOOKS_LEN][MAX_CONTACT][MAX_PHONE_NUMBER];
     char buf[BUF_SIZE];
-    char *name_list[MAX_CONTACT] = {NULL};
-    char phone_book_type[PHONE_BOOK_TYPE_LEN];
+    char type[MAX_PHONE_NUMBER];
+    char name[MAX_PHONE_NUMBER];
+    char contact_number[MAX_PHONE_NUMBER];
     char cmd;
+
+    /* init */
+    for(int i=0;i<PHONE_BOOKS_LEN;i++){
+        for(int j=0;j<MAX_CONTACT;j++)
+            strcpy(phone_books[i][j], "-1");
+    }
+    for(int i=0;i<PHONE_BOOKS_LEN;i++){
+        for(int j=0;j<MAX_CONTACT;j++)
+            strcpy(name_list[i][j], "-1");
+    }
+    for(int i=0;i<PHONE_BOOKS_LEN;i++){
+        for(int j=0;j<MAX_CONTACT;j++)
+            strcpy(contact_num_list[i][j], "-1");
+    }
+
     while(fgets(buf, BUF_SIZE, stdin)){
         cmd = buf[0];
-        get_phone_book_type(buf, phone_book_type);
-        if(cmd == 'p' && (!strcmp(phone_book_type, "school") || !strcmp(phone_book_type, "family") || !strcmp(phone_book_type, "company"))){
-            print_phone_books(phone_books, phone_book_type);
+        get_phone_book_type(buf, type);
+        if(cmd == 'p' && (!strcmp(type, "school") || !strcmp(type, "family") || !strcmp(type, "company"))){
+            print_phone_books(phone_books, name_list, contact_num_list, type);
             continue;
         }
 
-        char type[MAX_CONTACT];
-        char name[MAX_CONTACT];
-        char contact_number[MAX_CONTACT];
         int ret = get_phone_book_info(buf, type, name, contact_number);
+
         /* To ensure the function of phone_book_delete and phone_book_sort */
         if(cmd == 'd' || cmd == 's')
             ret = 0;
@@ -75,16 +88,16 @@ int main() {
 
         switch(cmd){
             case 'i':
-                phone_book_insert(phone_books, name_list, type, name, contact_number);
+                phone_book_insert(phone_books, name_list, contact_num_list, type, name, contact_number);
                 break;
             case 'd':
-                phone_book_delete(phone_books, name_list, name);
+                phone_book_delete(phone_books, name_list, contact_num_list, type, name);
                 break;
             case 'u':
-                phone_book_update(phone_books, name_list, type, name, contact_number);
+                phone_book_update(phone_books, name_list, contact_num_list, type, name, contact_number);
                 break;
             case 's':
-                phone_book_sort(phone_books, type);
+                phone_book_sort(phone_books, name_list, contact_num_list, type);
                 break;
             default:
                 fprintf(stderr, "unknown command\n");
@@ -94,55 +107,94 @@ int main() {
     return 0;
 }
 
-int phone_book_insert(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char **name_list, char *type, char *name, char *contact_number){
+int phone_book_insert(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER],char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name, char *contact_number){
     int i;
     for(i=0;i<MAX_CONTACT;i++){
-        if(!name_list[i]){
-            const size_t name_length = strlen(name);
-            name_list[i] = malloc(name_length+1);
-            memcpy(name_list[i], name, name_length+1);
-            strcpy((*phone_books)[i], type);
-            strcpy((*(phone_books+1))[i], name);
-            strcpy((*(phone_books+2))[i], contact_number);
+        if (!strcmp(type, "school") && !strcmp((*(name_list + SCHOOL_PHONE_BOOK))[i], "-1")){
+            strcpy((*(name_list + SCHOOL_PHONE_BOOK))[i], name);
+            strcpy((*(phone_books + SCHOOL_PHONE_BOOK))[i], type);
+            strcpy((*(contact_num_list + SCHOOL_PHONE_BOOK))[i], contact_number);
+            return 0;
+        } else if(!strcmp(type, "family") && !strcmp((*(name_list + FAMILY_PHONE_BOOK))[i], "-1")){
+            strcpy((*(name_list + FAMILY_PHONE_BOOK))[i], name);
+            strcpy((*(phone_books + FAMILY_PHONE_BOOK))[i], type);
+            strcpy((*(contact_num_list + FAMILY_PHONE_BOOK))[i], contact_number);
+            return 0;
+        } else if(!strcmp(type, "company") && !strcmp((*(name_list + COMPANY_PHONE_BOOK))[i], "-1")){
+            strcpy((*(name_list + COMPANY_PHONE_BOOK))[i], name);
+            strcpy((*(phone_books + COMPANY_PHONE_BOOK))[i], type);
+            strcpy((*(contact_num_list + COMPANY_PHONE_BOOK))[i], contact_number);
             return 0;
         }
     }
     return -1;
 }
 
-int phone_book_delete(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char **name_list, char *name){
-    const int phone_book_id = find_id_by_name(name_list, name);
-    if(phone_book_id < 0) return -1;
-    free(name_list[phone_book_id]);
-    name_list[phone_book_id] = NULL;
-    strcpy((*phone_books)[phone_book_id], "\0");
-    strcpy((*(phone_books+1))[phone_book_id], "\0");
-    strcpy((*(phone_books+2))[phone_book_id], "\0");
+int phone_book_delete(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER],char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name){
+    int phone_book_id;
+    if(!strcmp(type, "school")){
+       phone_book_id = find_id_by_name(name_list, name, type);
+       if(phone_book_id < 0) return -1;
+       strcpy((*(name_list + SCHOOL_PHONE_BOOK))[phone_book_id], "-1");
+       strcpy((*(phone_books + SCHOOL_PHONE_BOOK))[phone_book_id], "-1");
+       strcpy((*(contact_num_list + SCHOOL_PHONE_BOOK))[phone_book_id], "-1");
+    } else if(!strcmp(type, "family")){
+        phone_book_id = find_id_by_name(name_list, name, type);
+        if(phone_book_id < 0) return -1;
+        strcpy((*(name_list + FAMILY_PHONE_BOOK))[phone_book_id], "-1");
+        strcpy((*(phone_books + FAMILY_PHONE_BOOK))[phone_book_id], "-1");
+        strcpy((*(contact_num_list + FAMILY_PHONE_BOOK))[phone_book_id], "-1");
+    } else if(!strcmp(type, "company")){
+        phone_book_id = find_id_by_name(name_list, name, type);
+        if(phone_book_id < 0) return -1;
+        strcpy((*(name_list + COMPANY_PHONE_BOOK))[phone_book_id], "-1");
+        strcpy((*(phone_books + COMPANY_PHONE_BOOK))[phone_book_id], "-1");
+        strcpy((*(contact_num_list + COMPANY_PHONE_BOOK))[phone_book_id], "-1");
+    }
     return 0;
 }
 
-int phone_book_update(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char **name_list, char *type, char *name, char *contact_number){
-    const int phone_book_id = find_id_by_name(name_list, name);
-    if(phone_book_id < 0) return -1;
-    strcpy((*phone_books)[phone_book_id], type);
-    strcpy((*(phone_books+1))[phone_book_id], name);
-    strcpy((*(phone_books+2))[phone_book_id], contact_number);
+int phone_book_update(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER],char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type, char *name, char *contact_number){
+    int phone_book_id;
+    if(!strcmp(type, "school")){
+        phone_book_id = find_id_by_name(name_list, name, type);
+        if(phone_book_id < 0) return -1;
+        strcpy((*(contact_num_list + SCHOOL_PHONE_BOOK))[phone_book_id], contact_number);
+    } else if(!strcmp(type, "family")){
+        phone_book_id = find_id_by_name(name_list, name, type);
+        if(phone_book_id < 0) return -1;
+        strcpy((*(contact_num_list + FAMILY_PHONE_BOOK))[phone_book_id], contact_number);
+    } else if(!strcmp(type, "company")){
+        phone_book_id = find_id_by_name(name_list, name, type);
+        if(phone_book_id < 0) return -1;
+        strcpy((*(contact_num_list + COMPANY_PHONE_BOOK))[phone_book_id], contact_number);
+    }
     return 0;
 }
 
-int print_phone_books(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char *phone_book_type){
+int print_phone_books(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type){
     int i, j;
     printf("Type\tContact Name\tContact Number\n");
-    for(i=0;i<MAX_CONTACT;i++){
-        if(!strcmp(*((*phone_books)+i), phone_book_type)){
-            for(j=0;j<PHONE_BOOKS_LEN;j++){
-                printf("%s", *(*(phone_books+j)+i));
-                if(j != 2)
-                    printf("\t");
+    if(!strcmp(type, "school")){
+        for(i=0;i<MAX_CONTACT;i++){
+            if(strcmp((*(phone_books + SCHOOL_PHONE_BOOK))[i], "-1") > 0){
+                printf("%s\t%s\t%s\n", (*(phone_books + SCHOOL_PHONE_BOOK))[i], (*(name_list + SCHOOL_PHONE_BOOK))[i], (*(contact_num_list + SCHOOL_PHONE_BOOK))[i]);
             }
-            printf("\n");
+        }
+    } else if(!strcmp(type, "family")){
+        for(i=0;i<MAX_CONTACT;i++){
+            if(strcmp((*(phone_books + FAMILY_PHONE_BOOK))[i], "-1") > 0){
+                printf("%s\t%s\t%s\n", (*(phone_books + FAMILY_PHONE_BOOK))[i], (*(name_list + FAMILY_PHONE_BOOK))[i], (*(contact_num_list + FAMILY_PHONE_BOOK))[i]);
+            }
+        }
+    } else if(!strcmp(type, "company")){
+        for(i=0;i<MAX_CONTACT;i++){
+            if(strcmp((*(phone_books + COMPANY_PHONE_BOOK))[i], "-1") > 0){
+                printf("%s\t%s\t%s\n", (*(phone_books + COMPANY_PHONE_BOOK))[i], (*(name_list + COMPANY_PHONE_BOOK))[i], (*(contact_num_list + COMPANY_PHONE_BOOK))[i]);
+            }
         }
     }
+    return 0;
 }
 
 int get_phone_book_info(char *input, char *type, char *name, char *contact_number){
@@ -184,39 +236,85 @@ char *get_word(char *buf, char *word){
     return src;
 }
 
-int find_id_by_name(char **name_list, char *name){
-    for(int i=0;i<MAX_CONTACT;i++){
-        if(name_list[i] && !(strcmp(name, name_list[i])))
-            return i;
+int find_id_by_name(char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *name, char *type){
+    int i;
+    if(!strcmp(type, "school")){
+        for(i=0;i<MAX_CONTACT;i++){
+            if(!strcmp(name, (*(name_list+SCHOOL_PHONE_BOOK))[i]) && (*(name_list+SCHOOL_PHONE_BOOK))[i])
+                return i;
+        }
+    }else if(!strcmp(type, "family")){
+        for(i=0;i<MAX_CONTACT;i++){
+            if(!strcmp(name, (*(name_list+FAMILY_PHONE_BOOK))[i]) && (*(name_list+FAMILY_PHONE_BOOK))[i])
+                return i;
+        }
+    }else if(!strcmp(type, "company")){
+        for(i=0;i<MAX_CONTACT;i++){
+            if(!strcmp(name, (*(name_list+COMPANY_PHONE_BOOK))[i]) && (*(name_list+COMPANY_PHONE_BOOK))[i])
+                return i;
+        }
     }
     return ERR_CONTACT_NOT_FOUND;
 }
 
-int get_phone_book_type(char *input, char *phone_book_type){
-    input = get_word(input, phone_book_type);
+int get_phone_book_type(char *input, char *type){
+    input = get_word(input, type);
 
     /* get phone book type */
-    input = get_word(input, phone_book_type);
+    input = get_word(input, type);
     if(!input)
         return ERR_COMMAND_FORMAT;
     return 0;
 }
 
-int phone_book_sort(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type){
+int phone_book_sort(char (*phone_books)[MAX_CONTACT][MAX_PHONE_NUMBER], char (*name_list)[MAX_CONTACT][MAX_PHONE_NUMBER],char (*contact_num_list)[MAX_CONTACT][MAX_PHONE_NUMBER], char *type){
     int i, j;
     char tmp[MAX_PHONE_NUMBER];
-    for(i=0;i<MAX_CONTACT;i++){
-        if(!strcmp((*phone_books)[i], type)){
-            for (j = i+1; j < MAX_CONTACT; j++){
-                if(!strcmp((*phone_books)[j], type) && (strcmp((*(phone_books + 1))[i], (*(phone_books + 1))[j]) > 0)){
-                    /* sort the contact name */
-                    strcpy(tmp, (*(phone_books + 1))[j]);
-                    strcpy((*(phone_books + 1))[j], (*(phone_books + 1))[i]);
-                    strcpy((*(phone_books + 1))[i], tmp);
-                    /* sort the contact number */
-                    strcpy(tmp, (*(phone_books + 2))[j]);
-                    strcpy((*(phone_books + 2))[j], (*(phone_books + 2))[i]);
-                    strcpy((*(phone_books + 2))[i], tmp);
+    if(!strcmp(type, "school")){
+        for(i=0;i<MAX_CONTACT;i++){
+            for(j=0;j<MAX_CONTACT-1-i;j++){
+                if(strcmp((*(name_list + SCHOOL_PHONE_BOOK))[j], (*(name_list + SCHOOL_PHONE_BOOK))[j+1]) > 0 && strcmp((*(name_list + SCHOOL_PHONE_BOOK))[j], "-1") > 0 && strcmp((*(name_list + SCHOOL_PHONE_BOOK))[j+1], "-1") > 0){
+                    /* sort the name list */
+                    strcpy(tmp, (*(name_list + SCHOOL_PHONE_BOOK))[j+1]);
+                    strcpy((*(name_list + SCHOOL_PHONE_BOOK))[j+1], (*(name_list + SCHOOL_PHONE_BOOK))[j]);
+                    strcpy((*(name_list) + SCHOOL_PHONE_BOOK)[j], tmp);
+
+                    /* sort the contact number list */
+                    strcpy(tmp, (*(contact_num_list + SCHOOL_PHONE_BOOK))[j+1]);
+                    strcpy((*(contact_num_list + SCHOOL_PHONE_BOOK))[j+1], (*(contact_num_list + SCHOOL_PHONE_BOOK))[j]);
+                    strcpy((*(contact_num_list) + SCHOOL_PHONE_BOOK)[j], tmp);
+                }
+            }
+        }
+    } else if(!strcmp(type, "family")){
+        for(i=0;i<MAX_CONTACT;i++){
+            for(j=0;j<MAX_CONTACT-1-i;j++){
+                if(strcmp((*(name_list + FAMILY_PHONE_BOOK))[j], (*(name_list + FAMILY_PHONE_BOOK))[j+1]) > 0 && strcmp((*(name_list + FAMILY_PHONE_BOOK))[j], "-1") > 0 && strcmp((*(name_list + FAMILY_PHONE_BOOK))[j+1], "-1") > 0){
+                    /* sort the name list */
+                    strcpy(tmp, (*(name_list + FAMILY_PHONE_BOOK))[j+1]);
+                    strcpy((*(name_list + FAMILY_PHONE_BOOK))[j+1], (*(name_list + FAMILY_PHONE_BOOK))[j]);
+                    strcpy((*(name_list + FAMILY_PHONE_BOOK))[j], tmp);
+
+                    /* sort the contact number list */
+                    strcpy(tmp, (*(contact_num_list + FAMILY_PHONE_BOOK))[j+1]);
+                    strcpy((*(contact_num_list + FAMILY_PHONE_BOOK))[j+1], (*(contact_num_list + FAMILY_PHONE_BOOK))[j]);
+                    strcpy((*(contact_num_list + FAMILY_PHONE_BOOK))[j], tmp);
+                }
+            }
+        }
+    } else if(!strcmp(type, "company")){
+        for(i=0;i<MAX_CONTACT;i++){
+            for(j=0;j<MAX_CONTACT-1-i;j++){
+                if(strcmp((*(name_list + COMPANY_PHONE_BOOK))[j], (*(name_list + COMPANY_PHONE_BOOK))[j+1]) > 0 && strcmp((*(name_list + COMPANY_PHONE_BOOK))[j], "-1") > 0 && strcmp((*(name_list + COMPANY_PHONE_BOOK))[j+1], "-1") > 0){
+                    /* sort the name list */
+                    strcpy(tmp, (*(name_list + COMPANY_PHONE_BOOK))[j+1]);
+                    strcpy((*(name_list + COMPANY_PHONE_BOOK))[j+1], (*(name_list + COMPANY_PHONE_BOOK))[j]);
+                    strcpy((*(name_list + COMPANY_PHONE_BOOK))[j], tmp);
+
+                    /* sort the contact number list */
+                    strcpy(tmp, (*(contact_num_list + COMPANY_PHONE_BOOK))[j+1]);
+                    strcpy((*(contact_num_list + COMPANY_PHONE_BOOK))[j+1], (*(contact_num_list + COMPANY_PHONE_BOOK))[j]);
+                    strcpy((*(contact_num_list + COMPANY_PHONE_BOOK))[j], tmp);
                 }
             }
         }
