@@ -2,14 +2,6 @@
 #include <string.h>
 #include <ctype.h>
 
-enum {
-    SCHOOL_PHONE_BOOK,
-    FAMILY_PHONE_BOOK,
-    COMPANY_PHONE_BOOK,
-
-    PHONE_BOOKS_LEN
-};
-
 /* 最大聯絡人數量 */
 #define MAX_CONTACT 256
 
@@ -275,7 +267,7 @@ int phone_book_sort(pb *pb_school, pb *pb_family, pb *pb_company, char *type){
     if(!strcmp(type, "school")){
         for(i=0;i<MAX_CONTACT;i++){
             for(j=0;j<MAX_CONTACT-1-i;j++){
-                if(strcmp((*(pb_school + j)).contact_name, "-1") > 0 && strcmp((*(pb_school + j)).contact_number, "-1") > 0 && strcmp((*(pb_school + j + 1)).contact_name, "-1") > 0 && strcmp((*(pb_school + j + 1)).contact_number, "-1") > 0 && strcmp((*(pb_school + j)).contact_name, (*(pb_school + j + 1)).contact_name) > 0){
+                if(strcmp((*(pb_school + j)).contact_name, "-1") > 0 && strcmp((*(pb_school + j + 1)).contact_name, "-1") > 0 && strcmp((*(pb_school + j)).contact_name, (*(pb_school + j + 1)).contact_name) > 0){
                     /* sort the contact name */
                     strcpy(tmp, (*(pb_school + j + 1)).contact_name);
                     strcpy((*(pb_school + j + 1)).contact_name, (*(pb_school + j)).contact_name);
@@ -291,7 +283,7 @@ int phone_book_sort(pb *pb_school, pb *pb_family, pb *pb_company, char *type){
     } else if(!strcmp(type, "family")){
         for(i=0;i<MAX_CONTACT;i++){
             for(j=0;j<MAX_CONTACT-1-i;j++){
-                if(strcmp((*(pb_family + j)).contact_name, "-1") > 0 && strcmp((*(pb_family + j)).contact_number, "-1") > 0 && strcmp((*(pb_family + j + 1)).contact_name, "-1") > 0 && strcmp((*(pb_family + j + 1)).contact_number, "-1") > 0 && strcmp((*(pb_family + j)).contact_name, (*(pb_family + j + 1)).contact_name) > 0){
+                if(strcmp((*(pb_family + j)).contact_name, "-1") > 0 && strcmp((*(pb_family + j + 1)).contact_name, "-1") > 0 && strcmp((*(pb_family + j)).contact_name, (*(pb_family + j + 1)).contact_name) > 0){
                     /* sort the contact name */
                     strcpy(tmp, (*(pb_family + j + 1)).contact_name);
                     strcpy((*(pb_family + j + 1)).contact_name, (*(pb_family + j)).contact_name);
@@ -307,7 +299,7 @@ int phone_book_sort(pb *pb_school, pb *pb_family, pb *pb_company, char *type){
     } else if(!strcmp(type, "company")){
         for(i=0;i<MAX_CONTACT;i++){
             for(j=0;j<MAX_CONTACT-1-i;j++){
-                if(strcmp((*(pb_company + j)).contact_name, "-1") > 0 && strcmp((*(pb_company + j)).contact_number, "-1") > 0 && strcmp((*(pb_company + j + 1)).contact_name, "-1") > 0 && strcmp((*(pb_company + j + 1)).contact_number, "-1") > 0 && strcmp((*(pb_company + j)).contact_name, (*(pb_company + j + 1)).contact_name) > 0){
+                if(strcmp((*(pb_company + j)).contact_name, "-1") > 0 && strcmp((*(pb_company + j + 1)).contact_name, "-1") > 0 && strcmp((*(pb_company + j)).contact_name, (*(pb_company + j + 1)).contact_name) > 0){
                     /* sort the contact name */
                     strcpy(tmp, (*(pb_company + j + 1)).contact_name);
                     strcpy((*(pb_company + j + 1)).contact_name, (*(pb_company + j)).contact_name);
